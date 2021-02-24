@@ -7,9 +7,11 @@ const makeSut = () => {
     auth (email, password) {
       this.email = email
       this.password = password
+      return this.acessToken
     }
   }
   const authUseCaseSpy = new AuthUseCaseSpy()
+  authUseCaseSpy.acessToken = 'valid_token'
   const sut = new LoginRouter(authUseCaseSpy)
   return {
     authUseCaseSpy,
@@ -75,9 +77,36 @@ describe('Login Router', () => {
         password: '1q2w3e.,'
       }
     }
-    const { sut } = makeSut()
+    const { sut, authUseCaseSpy } = makeSut()
+    authUseCaseSpy.acessToken = null
     const httpResponse = sut.route(httpRequest)
     expect(httpResponse.statusCode).toBe(401)
     expect(httpResponse.body).toEqual(new UnauthorizedError())
+  })
+
+  test('Should return  500 if no AuthUseCase provide', () => {
+    const httpRequest = {
+      body: {
+        email: 'kelveng.info@gmail.com',
+        password: '1q2w3e.,'
+      }
+    }
+    const sut = new LoginRouter({})
+    const httpResponse = sut.route(httpRequest)
+    expect(httpResponse.statusCode).toBe(500)
+  })
+
+  test('Should return  200 if auth is valid', () => {
+    const httpRequest = {
+      body: {
+        email: 'kelveng.info@gmail.com',
+        password: '1q2w3e.,'
+      }
+    }
+    const { sut, authUseCaseSpy } = makeSut()
+
+    const httpResponse = sut.route(httpRequest)
+    expect(httpResponse.statusCode).toBe(200)
+    expect(httpResponse.body.acessToken).toEqual(authUseCaseSpy.acessToken)
   })
 })
